@@ -2,7 +2,7 @@
 
 <div align="center">
 
-# CyGen: Advanced RAG System with Groq LLM 🚀
+# CyGen: CyberSecurity RAG System with Open Source LLM 🚀
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg?cacheSeconds=2592000)
 ![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)
@@ -13,7 +13,7 @@
 </div>
 
 <p align="center">
-  <img src="assets/cygen logo.png" alt="CyGen Banner" width="50"/>
+  <img src="assets/cygen logo.png" alt="CyGen Banner" width="250"/>
 </p>
 
 CyGen is a powerful Retrieval-Augmented Generation (RAG) system built with FastAPI, MongoDB, Qdrant, and Groq LLM, featuring a Streamlit frontend for seamless interaction. This system allows you to upload PDF documents, process them intelligently, and have natural language conversations about their content.
