@@ -1,0 +1,24 @@
+[theme]
+primaryColor = "#4682B4"  # Steel Blue
+backgroundColor = "#F0F2F6"
+secondaryBackgroundColor = "#E0E4E8"
+textColor = "#262730"
+font = "sans serif"
+
+[server]
+port = 8501
+maxUploadSize = 200
+enableCORS = true
+enableXsrfProtection = true
+headless = true
+
+[browser]
+gatherUsageStats = false
+
+[runner]
+magicEnabled = true
+installTracer = false
+fixMatplotlib = true
+
+[logger]
+level = "info" 

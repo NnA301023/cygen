@@ -1,0 +1,81 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    environment:
+      - ENVIRONMENT=development  # Change to 'production' for production mode
+      - MAX_WORKERS=4
+      - PYTHONPATH=/app
+    env_file:
+      - .env
+    depends_on:
+      - mongodb
+      - qdrant
+    develop:
+      watch:
+        - path: ./service
+          target: /app/service
+          action: sync
+
+  streamlit:
+    build:
+      context: .
+      dockerfile: streamlit/Dockerfile
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./streamlit:/app/streamlit
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    environment:
+      - API_URL=http://app:8000
+      - WS_URL=ws://app:8000
+      - PYTHONPATH=/app
+      - STREAMLIT_SERVER_PORT=8501
+      - STREAMLIT_SERVER_HEADLESS=true
+      - STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
+      - MONGODB_URL=mongodb://mongodb:27017
+    env_file:
+      - .env
+    depends_on:
+      - app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    develop:
+      watch:
+        - path: ./streamlit
+          target: /app/streamlit
+          action: sync
+
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=rag_system
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
+
+volumes:
+  mongodb_data:
+  qdrant_data: 
