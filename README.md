@@ -13,7 +13,7 @@
 </div>
 
 <p align="center">
-  <img src="assets/cygen logo.png" alt="CyGen Banner" width="800"/>
+  <img src="assets/cygen logo.png" alt="CyGen Banner" width="50"/>
 </p>
 
 CyGen is a powerful Retrieval-Augmented Generation (RAG) system built with FastAPI, MongoDB, Qdrant, and Groq LLM, featuring a Streamlit frontend for seamless interaction. This system allows you to upload PDF documents, process them intelligently, and have natural language conversations about their content.
