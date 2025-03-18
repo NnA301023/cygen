@@ -1,5 +1,3 @@
-
-
 <div align="center">
 
 # CyGen: Self-Hosted LLM for Cybersecurity Analysis 🛡️
@@ -52,9 +50,63 @@ CyGen is a powerful Retrieval-Augmented Generation (RAG) system built with FastA
 
 ## 🏗️ System Architecture
 
-<p align="center">
-  <img src="https://via.placeholder.com/800x400?text=System+Architecture" alt="System Architecture" width="800"/>
-</p>
+<div align="center">
+
+```mermaid
+flowchart TD
+    subgraph Client
+        UI[Streamlit Frontend]
+    end
+
+    subgraph Backend
+        API[FastAPI Backend]
+        TaskQueue[Background Task Queue]
+        VectorDB[(Qdrant Vector DB)]
+        MongoDB[(MongoDB)]
+        LLM[Groq LLM API]
+    end
+
+    subgraph Processing
+        PDF[PDF Processor]
+        Chunker[Text Chunker]
+        Embedder[Embedding Model]
+    end
+
+    %% Client to Backend interactions
+    UI -->|1. Upload PDF| API
+    UI -->|5. Send Query| API
+    API -->|8. Stream Response| UI
+
+    %% Document Processing Flow
+    API -->|2. Process Document| TaskQueue
+    TaskQueue -->|3. Extract & Chunk| PDF
+    PDF -->|3.1. Split Text| Chunker
+    Chunker -->|3.2. Generate Embeddings| Embedder
+    Embedder -->|3.3. Store Vectors| VectorDB
+    Embedder -->|3.4. Store Metadata| MongoDB
+
+    %% Query Processing Flow
+    API -->|6. Retrieve Context| VectorDB
+    API -->|6.1. Get History| MongoDB
+    API -->|7. Generate Response| LLM
+    VectorDB -->|6.2. Relevant Chunks| API
+    MongoDB -->|6.3. Conversation History| API
+
+    %% Styles
+    classDef primary fill:#4527A0,stroke:#4527A0,color:white,stroke-width:2px
+    classDef secondary fill:#7E57C2,stroke:#7E57C2,color:white
+    classDef database fill:#1A237E,stroke:#1A237E,color:white
+    classDef processor fill:#FF7043,stroke:#FF7043,color:white
+    classDef client fill:#00ACC1,stroke:#00ACC1,color:white
+    
+    class API,TaskQueue primary
+    class PDF,Chunker,Embedder processor
+    class VectorDB,MongoDB database
+    class LLM secondary
+    class UI client
+```
+
+</div>
 
 The system comprises several key components that work together:
 
