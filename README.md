@@ -2,7 +2,7 @@
 
 <div align="center">
 
-# CyGen: CyberSecurity RAG System with Open Source LLM 🚀
+# CyGen: Self-Hosted LLM for Cybersecurity Analysis 🛡️
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg?cacheSeconds=2592000)
 ![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)
