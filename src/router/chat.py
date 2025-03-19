@@ -26,12 +26,19 @@ class ChatMessage(BaseModel):
     role: str
     content: str
     timestamp: datetime = None
+    feedback: Dict[str, Any] = {
+        "thumbs": None,  # "up" or "down"
+        "comment": None,  # Optional feedback comment
+        "submitted_at": None  # Timestamp when feedback was submitted
+    }
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert message to dictionary with ISO formatted timestamp."""
         data = self.model_dump()
         if self.timestamp:
             data["timestamp"] = self.timestamp.isoformat()
+        if self.feedback and self.feedback.get("submitted_at"):
+            data["feedback"]["submitted_at"] = self.feedback["submitted_at"].isoformat()
         return data
 
 class ConversationResponse(BaseModel):
@@ -131,6 +138,11 @@ class ChatResponse(BaseModel):
     role: str
     content: str
     timestamp: datetime = None
+
+class FeedbackRequest(BaseModel):
+    """Feedback request model."""
+    thumbs: str  # "up" or "down"
+    comment: str | None = None
 
 @router.put("/conversation", response_model=ConversationResponse)
 async def create_conversation():
@@ -289,10 +301,6 @@ async def chat_websocket(websocket: WebSocket, conversation_id: str):
                 # Prepare conversation context
                 conversation_context = ["Conversation History:"]
                 if conversation:
-                    # conversation_context = [
-                    #     {"role": m.role, "content": m.content}
-                    #     for m in conversation.messages[settings.N_LAST_MESSAGE:]
-                    # ]
                     logger.info(conversation.messages)
                     for message in conversation.messages[settings.N_LAST_MESSAGE:]:
                         conversation_context.append(f"{message.role}: {message.content}")
@@ -317,18 +325,36 @@ async def chat_websocket(websocket: WebSocket, conversation_id: str):
                     ]
                 else:
                     system_prompt = """
-                    Answer accoding user language, also consider conversation history if necessary to answer question.
+                    Answer according to user language, also consider conversation history if necessary to answer question.
                     You are a helpful AI assistant with access to a knowledge base of documents.
                     Use the provided context to answer questions accurately and comprehensively.
-                    If the context doesn't fully address the question, acknowledge what you know from the context
-                    and what you're unsure about. Always maintain accuracy over completeness.
-                    """
                     
+                    For each response:
+                    1. Analyze the provided context and cite specific sources using page numbers
+                    2. Structure your response to clearly separate information from different sources
+                    3. When citing information, use the format: [Source: filename, Page: X]
+                    4. If multiple sources support a point, cite all relevant sources
+                    5. If the context doesn't fully address the question, clearly state what information is from the sources and what is general knowledge
+                    
+                    Always maintain accuracy over completeness. If you're unsure about something, acknowledge your uncertainty and explain what evidence you do have from the sources.
+                    
+                    Remember to:
+                    - Provide page numbers for all cited information
+                    - Distinguish between direct quotes and paraphrased content
+                    - Note any conflicting information between sources
+                    - Be transparent about gaps in the provided context
+                    """
+                    context_knowledge = [f"{cont['text']}\nSource: {cont['file_path']} - Page Number: {cont['page_number']}" for cont in context]
+                    context_knowledge = "\n".join(context_knowledge)
                     messages = [
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": conversation_context},
-                        {"role": "user", "content": f"""Context: {json.dumps([c['text'] for c in context])}
-                        Question: {user_message.content}"""}
+                        {
+                            "role": "user", 
+                            "content": f"""
+                        Context: {context_knowledge}
+                        Question: {user_message.content}
+                        """}
                     ]
                 
                 # Generate response using LLM
@@ -494,3 +520,37 @@ async def chat_post(conversation_id: str, request: ChatRequest):
             status_code=500,
             detail="An unexpected error occurred"
         )
+
+@router.post("/{conversation_id}/messages/{message_index}/feedback")
+async def submit_feedback(conversation_id: str, message_index: int, feedback: FeedbackRequest):
+    """Submit feedback for a specific message in a conversation."""
+    try:
+        # Get conversation
+        conversation = await manager.get_conversation_history(conversation_id)
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        
+        # Validate message index
+        if message_index < 0 or message_index >= len(conversation.messages):
+            raise HTTPException(status_code=404, detail="Message not found")
+        
+        # Update feedback in the message
+        now = datetime.utcnow()
+        await manager.db.conversations.update_one(
+            {"id": conversation_id},
+            {"$set": {
+                f"messages.{message_index}.feedback": {
+                    "thumbs": feedback.thumbs,
+                    "comment": feedback.comment,
+                    "submitted_at": now
+                }
+            }}
+        )
+        
+        return {"status": "success", "message": "Feedback submitted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error submitting feedback: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to submit feedback")

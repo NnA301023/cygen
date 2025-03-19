@@ -4,6 +4,7 @@ import uuid
 from loguru import logger
 from fastembed import TextEmbedding
 from qdrant_client import QdrantClient
+from fastembed.rerank.cross_encoder import TextCrossEncoder
 from qdrant_client.http.models import PointStruct, Distance, VectorParams
 
 from ..settings import get_settings
@@ -18,6 +19,12 @@ class VectorStore:
     
     def __init__(self):
         """Initialize the vector store with FastEmbed and Qdrant."""
+
+        # Initialize Reranker
+        self.reranker = TextCrossEncoder(
+            model_name="Xenova/ms-marco-MiniLM-L-12-v2"
+        )
+
         # Initialize FastEmbed
         self.embedding_model = TextEmbedding(
             model_name="nomic-ai/nomic-embed-text-v1.5",
@@ -134,6 +141,8 @@ class VectorStore:
                     **res.payload
                 }
                 docs.append(doc)
+
+            # Re Ranking Document
             
             return docs
             

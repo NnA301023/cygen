@@ -44,9 +44,9 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
     
     # Processing Settings
-    MAX_WORKERS: int = 4  # Adjust based on server capacity
-    CHUNK_SIZE: int = 512  # Tokens per chunk
-    CHUNK_OVERLAP: int = 50  # Token overlap between chunks
+    MAX_WORKERS: int = 4
+    CHUNK_SIZE: int = 512
+    CHUNK_OVERLAP: int = 50 
     EMBEDDING_LENGTH: int = 768
     
     # Database Settings
@@ -59,7 +59,8 @@ class Settings(BaseSettings):
     COLLECTION_NAME: str = "documents"
     
     # LLM Settings
-    TOP_K: int = 10
+    TOP_K: int = 5 # 25
+    TOP_K_RERANKER: int = 10
     N_LAST_MESSAGE: int = -5
     RAG_THRESHOLD: float = 0.6
     GROQ_API_KEY: str

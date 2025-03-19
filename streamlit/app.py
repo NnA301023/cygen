@@ -96,15 +96,65 @@ def get_task_status(task_id: str) -> Dict[str, Any]:
         return {"status": "failed"}
 
 
-def format_message(msg: Dict[str, Any]) -> None:
+def submit_feedback(conversation_id: str, message_index: int, thumbs: str, comment: str | None = None) -> bool:
+    """Submit feedback for a message."""
+    try:
+        response = httpx.post(
+            get_api_url(f"/chat/{conversation_id}/messages/{message_index}/feedback"),
+            json={"thumbs": thumbs, "comment": comment},
+            timeout=10.0
+        )
+        return response.status_code == 200
+    except Exception as e:
+        st.error(f"Error submitting feedback: {str(e)}")
+        return False
+
+
+def format_message(msg: Dict[str, Any], message_index: int) -> None:
     """Format and display a message in the chat UI."""
     role = msg.get("role", "")
     content = msg.get("content", "")
+    feedback = msg.get("feedback", {})
     
     if role == "user":
         st.chat_message("user").write(content)
     elif role == "assistant":
-        st.chat_message("assistant").write(content)
+        with st.chat_message("assistant"):
+            st.write(content)
+            
+            # Only show feedback for assistant messages
+            if not feedback.get("submitted_at"):
+                # Use st.feedback for thumbs up/down
+                selected = st.feedback(
+                    "thumbs",
+                    key=f"feedback_{message_index}"
+                )
+                
+                # Handle feedback submission
+                if selected is not None:
+                    thumbs = "down" if selected == 0 else "up"
+                    
+                    # For thumbs down, show comment input
+                    comment = None
+                    if selected == 0:
+                        comment = st.text_input(
+                            "What was wrong with this response?",
+                            key=f"feedback_comment_{message_index}"
+                        )
+                        if st.button("Submit Feedback", key=f"submit_feedback_{message_index}"):
+                            if submit_feedback(st.session_state.conversation_id, message_index, thumbs, comment):
+                                st.warning("Thank you for your feedback!")
+                    else:
+                        # For thumbs up, submit immediately
+                        if submit_feedback(st.session_state.conversation_id, message_index, thumbs):
+                            st.success("Thank you for your feedback!")
+            else:
+                # Show submitted feedback
+                feedback_icon = "👍" if feedback["thumbs"] == "up" else "👎"
+                st.caption(f"Feedback: {feedback_icon}")
+                if feedback.get("comment"):
+                    st.caption(f"Comment: {feedback['comment']}")
+    
     elif role == "system":
         st.chat_message("system").write(content)
 
@@ -225,8 +275,8 @@ def main_content():
         st.subheader(f"Conversation: {conversation.get('title', 'Untitled')}")
     
     # Display chat messages
-    for message in st.session_state.messages:
-        format_message(message)
+    for message_index, message in enumerate(st.session_state.messages):
+        format_message(message, message_index)
     
     # Chat input
     if prompt := st.chat_input("Ask a question about your documents..."):
@@ -251,7 +301,7 @@ def main_content():
                     "content": response["content"]
                 }
                 st.session_state.messages.append(assistant_message)
-                format_message(assistant_message)
+                format_message(assistant_message, len(st.session_state.messages) - 1)
             else:
                 st.error("Failed to get response. Please try again.")
 
