@@ -381,6 +381,18 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 Project Link: [https://github.com/NnA301023/cygen](https://github.com/NnA301023/cygen)
 
+## 🌐 Connect With Us
+
+### Our Platforms
+- **Magazine**: [ITSec Buzz](https://itsec.buzz/)
+- **Engineering Space**: [ITSec Asia Tech](https://www.itsecasia.tech/)
+
+### Social Media
+- [Instagram](https://www.instagram.com/rndforge.official/)
+- [TikTok](https://www.tiktok.com/@rndforge)
+- [Threads](https://www.threads.net/@rndforge.official)
+- [YouTube](https://www.youtube.com/@rndforgeofficial)
+
 ---
 
 <div align="center">
